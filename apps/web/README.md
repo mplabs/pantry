@@ -19,8 +19,9 @@ npm run dev
 
 Optional:
 
-- `OPENAI_API_KEY` for LLM-assisted ingredient normalization
-- `OPENAI_MODEL` to override default model
+- `INGREDIENT_TRANSLATOR_PROVIDER` (`auto`, `ollama`, `openai`, `noop`)
+- `OLLAMA_BASE_URL` and `OLLAMA_MODEL` for Ollama-backed normalization
+- `OPENAI_API_KEY` and `OPENAI_MODEL` for OpenAI-backed normalization
 
 ## API Endpoints
 
