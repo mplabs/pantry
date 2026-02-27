@@ -1,43 +1,42 @@
 # Pantry Inventory System
 
-This repository contains the starter implementation for a pantry inventory management system.
+Pantry OS is a web-first pantry inventory system for **shared households**.
 
-## Goals
+## Product Direction
 
-- Track pantry items and quantities.
-- Track shelf life and use-by dates.
-- Highlight items that are expiring soon.
-- Prepare for future API integrations for automatic re-ordering.
-- Start with a web UI and keep architecture open for a future mobile app.
-
-## Initial Plan
-
-1. Create a simple web app (`apps/web`) for local pantry tracking.
-2. Model core pantry entities and status rules (fresh, expiring soon, expired).
-3. Persist data locally first, then introduce backend/API adapters.
-4. Add integration interfaces for future purchasing automation APIs.
-5. Reuse core logic for a future mobile client.
+- Next.js for web UI + backend API routes.
+- Multi-user households with shared inventory.
+- Category-based shelf life defaults and use-by date tracking.
+- Multilingual naming and search (for example, `milk` / `Milch`).
+- Abstract purchasing provider interface to support future API integrations.
+- Mobile target is Flutter, backed by the same API/domain model.
 
 ## Repository Layout
 
-- `apps/web`: Browser-based UI prototype.
-- `docs`: Architecture and product notes.
+- `apps/web`: Next.js app (frontend + API + database integration).
+- `ARCHITECTURE.md`: System design and boundaries.
+- `PLAN.md`: Work items and implementation roadmap.
+- `AGENTS.md`: Stored project preferences and operating constraints.
 
-## Run Web Prototype
-
-From the repository root:
+## Quick Start
 
 ```bash
 cd apps/web
-python3 -m http.server 4173
+npm install
+npm run prisma:generate
+npm run db:init
+npm run dev
 ```
 
-Open `http://localhost:4173`.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Current Features (Prototype)
+## API Endpoints (Current)
 
-- Add pantry items with quantity, category, location, purchase date.
-- Track explicit use-by dates or calculate from shelf life days.
-- Show freshness status (`fresh`, `expiring soon`, `expired`).
-- Filter inventory by status.
-- Persist data in browser `localStorage`.
+- `POST /api/bootstrap`: Creates/returns a shared demo household and users.
+- `GET/POST /api/users`: List/create users.
+- `GET/POST /api/households`: List/create households.
+- `GET/POST /api/households/:householdId/items`: Query/create pantry items.
+
+## Notes
+
+- Prisma schema engine commands (`migrate dev`, `db push`) are currently unreliable in this environment. The project uses `npm run db:init` as the deterministic SQLite schema bootstrap.
