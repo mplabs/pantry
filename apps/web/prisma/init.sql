@@ -124,10 +124,26 @@ CREATE UNIQUE INDEX IF NOT EXISTS "HouseholdInvite_token_key" ON "HouseholdInvit
 CREATE INDEX IF NOT EXISTS "HouseholdInvite_householdId_expiresAt_idx"
   ON "HouseholdInvite"("householdId", "expiresAt");
 
+CREATE TABLE IF NOT EXISTS "ProductCatalogItem" (
+  "barcode" TEXT NOT NULL PRIMARY KEY,
+  "source" TEXT NOT NULL,
+  "productName" TEXT,
+  "normalizedProductName" TEXT,
+  "brand" TEXT,
+  "quantityLabel" TEXT,
+  "category" TEXT NOT NULL DEFAULT 'OTHER',
+  "imageUrl" TEXT,
+  "rawPayloadJson" TEXT,
+  "lastSyncedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS "PantryItem" (
   "id" TEXT NOT NULL PRIMARY KEY,
   "householdId" TEXT NOT NULL,
   "addedByUserId" TEXT NOT NULL,
+  "barcode" TEXT,
   "primaryName" TEXT NOT NULL,
   "normalizedPrimaryName" TEXT NOT NULL,
   "canonicalName" TEXT NOT NULL,
@@ -153,6 +169,8 @@ CREATE INDEX IF NOT EXISTS "PantryItem_householdId_useByDate_idx"
   ON "PantryItem"("householdId", "useByDate");
 CREATE INDEX IF NOT EXISTS "PantryItem_canonicalName_idx"
   ON "PantryItem"("canonicalName");
+CREATE INDEX IF NOT EXISTS "PantryItem_barcode_idx"
+  ON "PantryItem"("barcode");
 
 CREATE TABLE IF NOT EXISTS "PantryItemName" (
   "id" TEXT NOT NULL PRIMARY KEY,

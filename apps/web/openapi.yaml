@@ -57,6 +57,9 @@ components:
       properties:
         id:
           type: string
+        barcode:
+          type: string
+          nullable: true
         primaryName:
           type: string
         canonicalName:
@@ -156,6 +159,8 @@ paths:
               properties:
                 name:
                   type: string
+                barcode:
+                  type: string
                 quantity:
                   type: number
                 unit:
@@ -234,3 +239,17 @@ paths:
       responses:
         '200':
           description: Resolved ingredient names and aliases
+  /api/products/barcode/{barcode}:
+    get:
+      summary: Resolve a barcode to a known product record
+      parameters:
+        - in: path
+          name: barcode
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product resolved by barcode
+        '404':
+          description: Product not found

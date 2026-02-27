@@ -22,6 +22,8 @@ Optional:
 - `INGREDIENT_TRANSLATOR_PROVIDER` (`auto`, `ollama`, `openai`, `noop`)
 - `OLLAMA_BASE_URL` and `OLLAMA_MODEL` for Ollama-backed normalization
 - `OPENAI_API_KEY` and `OPENAI_MODEL` for OpenAI-backed normalization
+- `OPEN_FOOD_FACTS_USER_AGENT` for barcode product lookups
+- `BARCODE_PRODUCT_CACHE_DAYS` for barcode cache freshness
 
 ## API Endpoints
 
@@ -30,6 +32,7 @@ Optional:
 - `POST /api/households/:householdId/invites`
 - `POST /api/invites/accept`
 - `POST /api/language/ingredients/resolve`
+- `GET /api/products/barcode/:barcode`
 - `GET/POST /api/auth/[...nextauth]`
 
 ## Docs

@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+
+import { BarcodeCameraScanner } from "@/components/barcode-camera-scanner";
 
 type HouseholdMember = {
   id: string;
@@ -30,6 +32,7 @@ type Household = {
 
 type PantryItem = {
   id: string;
+  barcode?: string | null;
   primaryName: string;
   quantity: number;
   unit: string | null;
@@ -42,6 +45,17 @@ type PantryItem = {
     locale: string;
     text: string;
   }>;
+};
+
+type BarcodeLookupProduct = {
+  barcode: string;
+  source: string;
+  productName: string;
+  brand?: string;
+  quantityLabel?: string;
+  imageUrl?: string;
+  category: string;
+  fromCache: boolean;
 };
 
 type IngredientResolution = {
@@ -92,7 +106,24 @@ function formatDate(value: string | null): string {
   return new Date(value).toLocaleDateString();
 }
 
+function inferUnitFromQuantityLabel(quantityLabel?: string): string | undefined {
+  if (!quantityLabel) {
+    return undefined;
+  }
+
+  const normalized = quantityLabel.toLowerCase();
+  if (normalized.includes("ml")) return "ml";
+  if (normalized.includes(" l")) return "L";
+  if (normalized.endsWith("l")) return "L";
+  if (normalized.includes("kg")) return "kg";
+  if (normalized.includes(" g")) return "g";
+  if (normalized.endsWith("g")) return "g";
+  return undefined;
+}
+
 export function PantryDashboard({ user }: PantryDashboardProps) {
+  const addItemFormRef = useRef<HTMLFormElement>(null);
+
   const [households, setHouseholds] = useState<Household[]>([]);
   const [activeHouseholdId, setActiveHouseholdId] = useState("");
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -103,6 +134,10 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
   const [recipeText, setRecipeText] = useState("");
   const [resolvedIngredients, setResolvedIngredients] = useState<IngredientResolution[]>([]);
   const [llmEnabled, setLlmEnabled] = useState(false);
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [barcodeLookupBusy, setBarcodeLookupBusy] = useState(false);
+  const [barcodeLookupError, setBarcodeLookupError] = useState("");
+  const [barcodeLookupProduct, setBarcodeLookupProduct] = useState<BarcodeLookupProduct | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -121,6 +156,67 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
       expired,
     };
   }, [items]);
+
+  function applyBarcodeProductToForm(product: BarcodeLookupProduct) {
+    const form = addItemFormRef.current;
+    if (!form) {
+      return;
+    }
+
+    const nameField = form.elements.namedItem("name") as HTMLInputElement | null;
+    const barcodeField = form.elements.namedItem("barcode") as HTMLInputElement | null;
+    const categoryField = form.elements.namedItem("category") as HTMLSelectElement | null;
+    const unitField = form.elements.namedItem("unit") as HTMLInputElement | null;
+    const notesField = form.elements.namedItem("notes") as HTMLInputElement | null;
+    const nameEnField = form.elements.namedItem("nameEn") as HTMLInputElement | null;
+
+    if (nameField) nameField.value = product.productName;
+    if (barcodeField) barcodeField.value = product.barcode;
+    if (categoryField) categoryField.value = product.category;
+
+    const unitHint = inferUnitFromQuantityLabel(product.quantityLabel);
+    if (unitField && unitHint) unitField.value = unitHint;
+    if (nameEnField && !nameEnField.value) nameEnField.value = product.productName;
+    if (notesField && product.brand && !notesField.value) {
+      notesField.value = `Brand: ${product.brand}`;
+    }
+  }
+
+  async function lookupBarcode(rawBarcode?: string) {
+    const barcode = (rawBarcode ?? barcodeInput).trim();
+
+    if (!/^\d{8,14}$/.test(barcode)) {
+      setBarcodeLookupError("Barcode must contain 8 to 14 digits.");
+      return;
+    }
+
+    setBarcodeLookupBusy(true);
+    setBarcodeLookupError("");
+    setBarcodeLookupProduct(null);
+
+    try {
+      const payload = await parseResponse<{ product: BarcodeLookupProduct }>(
+        await fetch(`/api/products/barcode/${barcode}`),
+      );
+      setBarcodeInput(barcode);
+      setBarcodeLookupProduct(payload.product);
+      applyBarcodeProductToForm(payload.product);
+    } catch (requestError) {
+      setBarcodeLookupError(
+        requestError instanceof Error ? requestError.message : "Unable to resolve barcode.",
+      );
+    } finally {
+      setBarcodeLookupBusy(false);
+    }
+  }
+
+  function onBarcodeFieldKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+    event.preventDefault();
+    void lookupBarcode();
+  }
 
   async function loadHouseholds() {
     const payload = await parseResponse<{
@@ -270,6 +366,7 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
     };
 
     const payload: {
+      barcode?: string;
       name: string;
       quantity: number;
       unit?: string;
@@ -281,6 +378,7 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
       notes?: string;
       localizedNames?: Record<string, string>;
     } = {
+      barcode: String(formData.get("barcode") ?? "").trim() || undefined,
       name: String(formData.get("name") ?? "").trim(),
       quantity: Number(formData.get("quantity") ?? 0),
       unit: String(formData.get("unit") ?? "").trim() || undefined,
@@ -324,6 +422,8 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
 
       setSuccess("Item added.");
       form.reset();
+      setBarcodeInput("");
+      setBarcodeLookupProduct(null);
       await loadItems(activeHouseholdId);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to add item.");
@@ -461,7 +561,49 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
         <article className="rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm">
           <h2 className="text-lg font-semibold">Add inventory item</h2>
 
-          <form className="mt-3 grid gap-3" onSubmit={addItem}>
+          <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-sm font-semibold text-slate-800">Barcode input (USB scanner or camera)</p>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <input
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                placeholder="Scan or enter EAN/UPC barcode"
+                value={barcodeInput}
+                onChange={(event) => setBarcodeInput(event.target.value.replace(/\D/g, ""))}
+                onKeyDown={onBarcodeFieldKeyDown}
+              />
+              <button
+                type="button"
+                onClick={() => lookupBarcode()}
+                disabled={barcodeLookupBusy}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
+              >
+                {barcodeLookupBusy ? "Looking up..." : "Lookup barcode"}
+              </button>
+            </div>
+            <BarcodeCameraScanner
+              disabled={barcodeLookupBusy}
+              onDetected={(barcode) => {
+                setBarcodeInput(barcode.replace(/\D/g, ""));
+                void lookupBarcode(barcode.replace(/\D/g, ""));
+              }}
+            />
+            {barcodeLookupProduct ? (
+              <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                Matched: {barcodeLookupProduct.productName}
+                {barcodeLookupProduct.brand ? ` (${barcodeLookupProduct.brand})` : ""} via{" "}
+                {barcodeLookupProduct.source}
+                {barcodeLookupProduct.fromCache ? " [cache]" : ""}
+              </div>
+            ) : null}
+            {barcodeLookupError ? (
+              <div className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                {barcodeLookupError}
+              </div>
+            ) : null}
+          </div>
+
+          <form ref={addItemFormRef} className="mt-3 grid gap-3" onSubmit={addItem}>
+            <input name="barcode" type="hidden" value={barcodeInput} readOnly />
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1 text-sm">
                 Name
@@ -614,10 +756,11 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
         </div>
 
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-[860px] table-auto border-collapse text-sm">
+          <table className="min-w-[940px] table-auto border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-500">
                 <th className="px-2 py-2">Item</th>
+                <th className="px-2 py-2">Barcode</th>
                 <th className="px-2 py-2">Quantity</th>
                 <th className="px-2 py-2">Category</th>
                 <th className="px-2 py-2">Use-by</th>
@@ -628,7 +771,7 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-2 py-4 text-center text-slate-500">
+                  <td colSpan={7} className="px-2 py-4 text-center text-slate-500">
                     No items found.
                   </td>
                 </tr>
@@ -639,6 +782,7 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
                       <p className="font-semibold">{item.primaryName}</p>
                       {item.location ? <p className="text-xs text-slate-500">{item.location}</p> : null}
                     </td>
+                    <td className="px-2 py-2 text-xs text-slate-600">{item.barcode ?? "-"}</td>
                     <td className="px-2 py-2">
                       {item.quantity}
                       {item.unit ? ` ${item.unit}` : ""}

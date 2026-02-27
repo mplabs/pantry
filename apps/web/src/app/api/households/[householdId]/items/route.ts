@@ -13,6 +13,7 @@ import { normalizeIngredient } from "@/lib/language/ingredient-normalizer";
 import { prisma } from "@/lib/prisma";
 
 const createItemSchema = z.object({
+  barcode: z.string().regex(/^\d{8,14}$/).optional(),
   name: z.string().trim().min(1).max(120),
   quantity: z.number().positive(),
   unit: z.string().trim().max(40).optional(),
@@ -144,6 +145,7 @@ export async function POST(
     data: {
       householdId,
       addedByUserId: currentUser.id,
+      barcode: data.barcode,
       primaryName: data.name,
       normalizedPrimaryName: normalizeTerm(data.name),
       canonicalName: normalizedIngredient.canonical,

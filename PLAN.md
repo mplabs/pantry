@@ -11,6 +11,7 @@
 7. Implement language-independent ingredient normalization endpoint.
 8. Add Tailwind-based web UI refresh.
 9. Publish OpenAPI contract for Flutter integration (`apps/web/openapi.yaml`).
+10. Add barcode lookup flow with camera/USB input and product metadata caching.
 
 ## In Progress
 

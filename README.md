@@ -38,6 +38,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - `POST /api/households/:householdId/invites`
 - `POST /api/invites/accept`
 - `POST /api/language/ingredients/resolve`
+- `GET /api/products/barcode/:barcode`
 - `GET/POST /api/auth/[...nextauth]`
 
 ## Notes

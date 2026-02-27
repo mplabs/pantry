@@ -37,6 +37,7 @@ This directly supports "select a household and see shared households" with link-
 - `/api/households/[householdId]/invites`: generate invite URL.
 - `/api/invites/accept`: join household using token.
 - `/api/language/ingredients/resolve`: normalize ingredient names.
+- `/api/products/barcode/[barcode]`: resolve barcode to cached product metadata.
 
 4. Domain Services (`apps/web/src/lib`)
 - `inventory/category-defaults.ts`: shelf-life defaults.
@@ -44,12 +45,15 @@ This directly supports "select a household and see shared households" with link-
 - `inventory/name-lexicon.ts`: deterministic EN/DE lexical mappings.
 - `language/ingredient-normalizer.ts`: canonicalization + alias expansion.
 - `language/translator.ts`: optional LLM-backed normalization when `OPENAI_API_KEY` exists.
+- `barcode/openfoodfacts.ts`: external barcode product lookup adapter.
+- `barcode/catalog.ts`: product cache orchestration and local upsert logic.
 - `purchasing/provider.ts`: abstract purchasing provider interface.
 
 5. Persistence
 - Prisma schema in `apps/web/prisma/schema.prisma`.
 - SQLite bootstrap in `apps/web/prisma/init.sql`.
 - Auth tables (`User`, `Account`, `Session`, `Authenticator`) + pantry domain tables.
+- Product catalog cache table (`ProductCatalogItem`) for barcode lookups.
 
 ## Language-Independent Ingredient Strategy
 
