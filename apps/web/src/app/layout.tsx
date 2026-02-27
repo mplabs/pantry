@@ -16,7 +16,7 @@ const monoFont = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Pantry OS",
-  description: "Shared, multilingual pantry inventory for households",
+  description: "Shared pantry inventory with Auth.js passkeys and invite links",
 };
 
 export default function RootLayout({
@@ -26,7 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${bodyFont.variable} ${monoFont.variable}`}>{children}</body>
+      <body className={`${bodyFont.variable} ${monoFont.variable} font-[family-name:var(--font-body)] text-slate-900`}>
+        {children}
+      </body>
     </html>
   );
 }

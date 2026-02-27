@@ -29,13 +29,70 @@ enum PantryCategory {
 
 model User {
   id               String                @id @default(cuid())
-  email            String?               @unique
-  displayName      String
+  name             String?
+  email            String                @unique
+  emailVerified    DateTime?
+  image            String?
   preferredLocales String                @default("en,de")
+  accounts         Account[]
+  sessions         Session[]
+  authenticators   Authenticator[]
   memberships      HouseholdMembership[]
   itemsAdded       PantryItem[]          @relation("ItemsAdded")
+  createdInvites   HouseholdInvite[]     @relation("InviteCreator")
+  acceptedInvites  HouseholdInvite[]     @relation("InviteAcceptor")
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
 }
 
 model Household {
@@ -44,6 +101,7 @@ model Household {
   defaultLocale String                @default("de")
   memberships   HouseholdMembership[]
   items         PantryItem[]
+  invites       HouseholdInvite[]
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
 }
@@ -59,6 +117,22 @@ model HouseholdMembership {
 
   @@unique([householdId, userId])
   @@index([userId])
+}
+
+model HouseholdInvite {
+  id               String    @id @default(cuid())
+  householdId      String
+  token            String    @unique
+  createdByUserId  String
+  acceptedByUserId String?
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  household        Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdByUser    User      @relation("InviteCreator", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  acceptedByUser   User?     @relation("InviteAcceptor", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, expiresAt])
 }
 
 model PantryItem {

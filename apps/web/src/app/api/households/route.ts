@@ -2,57 +2,78 @@ import { HouseholdRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { requireCurrentUser } from "@/lib/auth/current-user";
 import { prisma } from "@/lib/prisma";
 
-const createHouseholdSchema = z
-  .object({
-    name: z.string().trim().min(2).max(120),
-    defaultLocale: z.string().trim().min(2).max(8).default("de"),
-    ownerUserId: z.string().trim().min(1).optional(),
-    owner: z
-      .object({
-        displayName: z.string().trim().min(1).max(120),
-        email: z.string().email().optional(),
-        preferredLocales: z.array(z.string().trim().min(2).max(8)).default(["en", "de"]),
-      })
-      .optional(),
-  })
-  .refine((value) => Boolean(value.ownerUserId || value.owner), {
-    message: "ownerUserId or owner is required",
-    path: ["ownerUserId"],
-  });
+const createHouseholdSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  defaultLocale: z.string().trim().min(2).max(8).default("de"),
+});
 
-export async function GET(request: NextRequest) {
-  const userId = request.nextUrl.searchParams.get("userId");
+export async function GET() {
+  const currentUser = await requireCurrentUser();
+
+  if (!currentUser) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const households = await prisma.household.findMany({
-    where: userId
-      ? {
-          memberships: {
-            some: { userId },
-          },
-        }
-      : undefined,
+    where: {
+      memberships: {
+        some: {
+          userId: currentUser.id,
+        },
+      },
+    },
     include: {
       memberships: {
         include: {
           user: {
             select: {
               id: true,
-              displayName: true,
+              name: true,
               email: true,
             },
           },
         },
       },
+      invites: {
+        where: {
+          acceptedAt: null,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+        select: {
+          id: true,
+          token: true,
+          createdAt: true,
+          expiresAt: true,
+          createdByUserId: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: {
+      createdAt: "asc",
+    },
   });
 
-  return NextResponse.json({ households });
+  return NextResponse.json({
+    households,
+    currentUser,
+  });
 }
 
 export async function POST(request: NextRequest) {
+  const currentUser = await requireCurrentUser();
+
+  if (!currentUser) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await request.json();
   const parsed = createHouseholdSchema.safeParse(body);
 
@@ -63,58 +84,33 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { name, defaultLocale, ownerUserId, owner } = parsed.data;
+  const { name, defaultLocale } = parsed.data;
 
-  const result = await prisma.$transaction(async (tx) => {
-    const resolvedOwnerUserId = ownerUserId
-      ? ownerUserId
-      : (
-          await tx.user.create({
-            data: {
-              displayName: owner!.displayName,
-              email: owner!.email,
-              preferredLocales: owner!.preferredLocales.join(","),
-            },
-          })
-        ).id;
-
-    const ownerExists = await tx.user.findUnique({
-      where: { id: resolvedOwnerUserId },
-      select: { id: true },
-    });
-
-    if (!ownerExists) {
-      throw new Error("Owner user does not exist");
-    }
-
-    const household = await tx.household.create({
-      data: {
-        name,
-        defaultLocale,
-        memberships: {
-          create: {
-            userId: resolvedOwnerUserId,
-            role: HouseholdRole.OWNER,
-          },
+  const household = await prisma.household.create({
+    data: {
+      name,
+      defaultLocale,
+      memberships: {
+        create: {
+          userId: currentUser.id,
+          role: HouseholdRole.OWNER,
         },
       },
-      include: {
-        memberships: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                displayName: true,
-                email: true,
-              },
+    },
+    include: {
+      memberships: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
             },
           },
         },
       },
-    });
-
-    return { household, ownerUserId: resolvedOwnerUserId };
+    },
   });
 
-  return NextResponse.json(result, { status: 201 });
+  return NextResponse.json({ household }, { status: 201 });
 }

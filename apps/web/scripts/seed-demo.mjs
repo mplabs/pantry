@@ -7,7 +7,7 @@ async function main() {
     where: { email: "mila@example.com" },
     update: {},
     create: {
-      displayName: "Mila",
+      name: "Mila",
       email: "mila@example.com",
       preferredLocales: "de,en",
     },
@@ -17,7 +17,7 @@ async function main() {
     where: { email: "alex@example.com" },
     update: {},
     create: {
-      displayName: "Alex",
+      name: "Alex",
       email: "alex@example.com",
       preferredLocales: "en,de",
     },

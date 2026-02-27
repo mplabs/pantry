@@ -1,0 +1,236 @@
+openapi: 3.1.0
+info:
+  title: Pantry OS API
+  version: 0.1.0
+  description: API contract for the Pantry OS web backend and future Flutter client.
+servers:
+  - url: http://localhost:3000
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: authjs.session-token
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    HouseholdMember:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [OWNER, MEMBER]
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+              nullable: true
+            email:
+              type: string
+          required: [id, email]
+      required: [id, role, user]
+    Household:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        defaultLocale:
+          type: string
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/HouseholdMember'
+      required: [id, name, defaultLocale, memberships]
+    PantryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        primaryName:
+          type: string
+        canonicalName:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+          nullable: true
+        category:
+          type: string
+        useByDate:
+          type: string
+          format: date-time
+          nullable: true
+      required: [id, primaryName, canonicalName, quantity, category]
+security:
+  - sessionCookie: []
+paths:
+  /api/households:
+    get:
+      summary: List households for the signed-in user
+      responses:
+        '200':
+          description: User households
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a household
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                defaultLocale:
+                  type: string
+              required: [name]
+      responses:
+        '201':
+          description: Household created
+        '400':
+          description: Validation error
+  /api/households/{householdId}/items:
+    get:
+      summary: List inventory items for a household
+      parameters:
+        - in: path
+          name: householdId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [fresh, expiring, expired]
+      responses:
+        '200':
+          description: Item list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PantryItem'
+        '403':
+          description: Not a household member
+    post:
+      summary: Create inventory item
+      parameters:
+        - in: path
+          name: householdId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                quantity:
+                  type: number
+                unit:
+                  type: string
+                category:
+                  type: string
+                location:
+                  type: string
+                purchaseDate:
+                  type: string
+                  format: date
+                useByDate:
+                  type: string
+                  format: date
+                shelfLifeDays:
+                  type: integer
+                notes:
+                  type: string
+                localizedNames:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required: [name, quantity]
+      responses:
+        '201':
+          description: Item created
+  /api/households/{householdId}/invites:
+    post:
+      summary: Generate invite link for a household
+      parameters:
+        - in: path
+          name: householdId
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Invite link generated
+        '403':
+          description: Not a household member
+  /api/invites/accept:
+    post:
+      summary: Accept invite token and join household
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required: [token]
+      responses:
+        '200':
+          description: Invite accepted
+        '404':
+          description: Invite not found
+        '410':
+          description: Invite expired
+  /api/language/ingredients/resolve:
+    post:
+      summary: Normalize ingredient names to language-independent canonical keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ingredients:
+                  type: array
+                  items:
+                    type: string
+              required: [ingredients]
+      responses:
+        '200':
+          description: Resolved ingredient names and aliases

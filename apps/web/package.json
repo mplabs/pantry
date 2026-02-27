@@ -7,15 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:init": "mkdir -p prisma && sqlite3 prisma/dev.db < prisma/init.sql",
+    "db:init": "rm -f prisma/dev.db && mkdir -p prisma && sqlite3 prisma/dev.db < prisma/init.sql",
     "db:seed-demo": "node ./scripts/seed-demo.mjs",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
     "@prisma/client": "^6.16.2",
+    "@simplewebauthn/browser": "^9.0.1",
+    "@simplewebauthn/server": "^9.0.3",
+    "@tailwindcss/postcss": "^4.2.1",
     "next": "16.1.6",
+    "next-auth": "^5.0.0-beta.30",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "tailwindcss": "^4.2.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
