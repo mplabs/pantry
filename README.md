@@ -22,3 +22,22 @@ This repository contains the starter implementation for a pantry inventory manag
 
 - `apps/web`: Browser-based UI prototype.
 - `docs`: Architecture and product notes.
+
+## Run Web Prototype
+
+From the repository root:
+
+```bash
+cd apps/web
+python3 -m http.server 4173
+```
+
+Open `http://localhost:4173`.
+
+## Current Features (Prototype)
+
+- Add pantry items with quantity, category, location, purchase date.
+- Track explicit use-by dates or calculate from shelf life days.
+- Show freshness status (`fresh`, `expiring soon`, `expired`).
+- Filter inventory by status.
+- Persist data in browser `localStorage`.
