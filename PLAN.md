@@ -3,24 +3,25 @@
 ## Completed
 
 1. Initialize repository and baseline docs.
-2. Migrate web prototype to Next.js.
-3. Add multi-user/shared-household schema and API routes.
-4. Add category shelf-life defaults and freshness status logic.
-5. Add multilingual canonicalization and EN/DE alias search.
-6. Add purchasing provider abstraction.
-7. Add deterministic SQLite bootstrap (`db:init`) and demo seeding script.
+2. Migrate to Next.js app architecture.
+3. Implement Auth.js with passkey support.
+4. Model shared households and membership roles.
+5. Implement household selection and invite-link join flow.
+6. Implement category shelf-life defaults and freshness statuses.
+7. Implement language-independent ingredient normalization endpoint.
+8. Add Tailwind-based web UI refresh.
+9. Publish OpenAPI contract for Flutter integration (`apps/web/openapi.yaml`).
 
 ## In Progress
 
-1. Harden database migration workflow for local/dev/prod parity.
-2. Replace demo bootstrap with real authentication and household invitations.
+1. Add production-ready auth hardening (session security policy, abuse limits, recovery UX).
+2. Replace deterministic SQLite bootstrap with robust migration workflow.
 
 ## Next
 
-1. Add stock decrement and low-stock thresholds per household.
-2. Add recurring-needs model for auto-buy candidate generation.
-3. Add provider orchestration endpoints behind `PurchasingProvider`.
-4. Add test coverage for API handlers and multilingual matching.
-5. Add localization layer for the UI itself (not just item matching).
-6. Add OpenAPI spec for Flutter integration.
-7. Add CI checks for lint, build, and API contract validation.
+1. Add item edit/delete + stock decrement workflows.
+2. Add low-stock thresholds and recurring-needs model.
+3. Add purchasing orchestration endpoints using `PurchasingProvider` abstractions.
+4. Add invite management UI (revoke, list history, expiration controls).
+5. Add API tests and contract tests against OpenAPI.
+6. Start Flutter client scaffold using current API contract.

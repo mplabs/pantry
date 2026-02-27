@@ -2,63 +2,71 @@
 
 ## Scope
 
-Pantry OS is a shared-household inventory platform with web-first delivery and a Flutter mobile target.
+Pantry OS is a shared-household pantry system with:
 
-## Principles
+- Web client now (Next.js + Tailwind).
+- Flutter client next (reusing backend API contracts).
+- Auth.js passkeys for authentication.
+- Language-independent ingredient handling for EN recipes and DE shopping.
 
-- Keep domain logic API-first so web and Flutter clients reuse the same backend.
-- Support multilingual item naming and search from the start.
-- Separate purchasing orchestration behind provider interfaces.
-- Optimize for incremental evolution: local SQLite now, managed database later.
+## Core Interaction Model
 
-## System Components
+1. User signs in with passkey.
+2. User sees households where they are a member.
+3. User selects one household as active context.
+4. Household members share one inventory view.
+5. Members can generate invite links; recipient opens `/join/:token` and joins household.
 
-1. Next.js Web App (`apps/web`)
-- App Router UI for inventory workflows.
-- Client-side forms for setup and item management.
+This directly supports "select a household and see shared households" with link-based invites.
 
-2. Backend API (Next.js Route Handlers)
-- `/api/users`: user lifecycle for shared households.
-- `/api/households`: household creation/listing.
-- `/api/households/[householdId]/items`: inventory query/create.
-- `/api/bootstrap`: demo workspace initialization.
+## Components
 
-3. Domain Libraries (`src/lib`)
-- `inventory/category-defaults.ts`: category shelf-life defaults.
-- `inventory/freshness.ts`: status derivation (`fresh`, `expiring`, `expired`).
-- `inventory/name-lexicon.ts`: canonicalization and EN/DE alias support.
-- `purchasing/provider.ts`: abstract purchasing provider contract.
+1. Web UI (`apps/web/src/app`, `apps/web/src/components`)
+- English-only UI.
+- Tailwind styling.
+- Household selection, inventory operations, invite generation, recipe-language bridge.
 
-4. Data Layer
-- Prisma client for data access.
-- SQLite as the initial persistence engine (`apps/web/prisma/dev.db`).
-- SQL bootstrap script (`apps/web/prisma/init.sql`) for deterministic schema setup.
+2. Auth (`apps/web/src/auth.ts`)
+- Auth.js v5 + Prisma adapter.
+- Passkey provider (`next-auth/providers/passkey`).
+- Session-backed route protection.
 
-## Data Model
+3. API (Next.js route handlers)
+- `/api/households`: list/create households for current user.
+- `/api/households/[householdId]/items`: shared inventory list/create.
+- `/api/households/[householdId]/invites`: generate invite URL.
+- `/api/invites/accept`: join household using token.
+- `/api/language/ingredients/resolve`: normalize ingredient names.
 
-- `User`: identity + locale preferences.
-- `Household`: shared inventory boundary.
-- `HouseholdMembership`: user roles per household (`OWNER`, `MEMBER`).
-- `PantryItem`: stock record with category, quantity, and shelf/use-by fields.
-- `PantryItemName`: localized and alias names per item for multilingual lookup.
+4. Domain Services (`apps/web/src/lib`)
+- `inventory/category-defaults.ts`: shelf-life defaults.
+- `inventory/freshness.ts`: freshness status derivation.
+- `inventory/name-lexicon.ts`: deterministic EN/DE lexical mappings.
+- `language/ingredient-normalizer.ts`: canonicalization + alias expansion.
+- `language/translator.ts`: optional LLM-backed normalization when `OPENAI_API_KEY` exists.
+- `purchasing/provider.ts`: abstract purchasing provider interface.
 
-## Multilingual Strategy
+5. Persistence
+- Prisma schema in `apps/web/prisma/schema.prisma`.
+- SQLite bootstrap in `apps/web/prisma/init.sql`.
+- Auth tables (`User`, `Account`, `Session`, `Authenticator`) + pantry domain tables.
 
-- Normalize names (case/diacritic insensitive).
-- Canonicalize known aliases (for example `milk` and `Milch` => canonical `milk`).
-- Persist localized item names (`en`, `de`, and undetermined locale).
-- Search checks canonical key, normalized primary name, and alias table.
+## Language-Independent Ingredient Strategy
 
-## Shelf-Life Strategy
+- Keep UI language fixed to English.
+- Convert user input and recipe ingredients into canonical keys.
+- Persist aliases per item (`PantryItemName`) for EN/DE terms.
+- Optional LLM normalization augments deterministic lexicon fallback.
+- This supports mapping English recipe ingredients to German shopping terms.
 
-- Category defaults provide baseline shelf-life days.
-- Item-specific `shelfLifeDays` and `useByDate` override defaults.
-- If `useByDate` is absent, derive it from purchase date + effective shelf life.
+## Mobile/Flutter Readiness
 
-## Future Extension Points
+- API-first architecture and OpenAPI spec (`apps/web/openapi.yaml`).
+- Flutter client can consume existing household, invite, inventory, and language endpoints.
 
-- AuthN/AuthZ: replace demo bootstrap with real auth and session handling.
-- Managed DB: move from SQLite to Postgres with standard migrations.
-- Purchasing integrations: implement provider adapters for REWE and Ökomarktgemeinschaft.
-- Eventing: emit low-stock/expiry events for auto-buy workflows.
-- Flutter client: consume current APIs and shared domain rules.
+## Future Extensions
+
+- Replace SQLite bootstrap with migration-based managed Postgres flow.
+- Add RBAC refinements per household role.
+- Implement provider adapters for REWE and Ökomarktgemeinschaft.
+- Add recurring-buy rules and checkout orchestration flows.

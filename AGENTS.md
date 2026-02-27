@@ -2,17 +2,23 @@
 
 ## Project Preferences
 
-1. Framework: Use Next.js for web.
-2. Tenancy: Multi-user with shared households.
-3. Shelf-life policy: Category-specific defaults, overridable per item.
-4. Purchasing: Keep an abstract provider interface now; target REWE and Ökomarktgemeinschaft later.
-5. Backend: Required (API + database), not frontend-only.
-6. Mobile target: Flutter.
-7. Language handling: Support multilingual pantry input and matching (at minimum English/German).
+1. Framework: Next.js for web.
+2. Styling: Tailwind CSS.
+3. Tenancy: Multi-user with shared households.
+4. Household UX: Select from existing shared households; join via invite links.
+5. Shelf-life policy: Category-specific defaults with per-item overrides.
+6. Backend: Required (API + database), not frontend-only.
+7. Auth: Auth.js with passkeys.
+8. Mobile target: Flutter.
+9. Language policy:
+- UI can stay English-only.
+- Ingredient and recipe terms must be language-independent.
+- EN recipe terms should map to DE shopping terms (LLM-assisted when available).
+10. Purchasing: Keep abstract provider interface now; REWE and Ökomarktgemeinschaft later.
 
 ## Working Agreements
 
-1. Keep architecture decisions documented in `ARCHITECTURE.md`.
-2. Keep implementation roadmap and task tracking in `PLAN.md`.
+1. Keep architectural decisions in `ARCHITECTURE.md`.
+2. Keep roadmap/work tracking in `PLAN.md`.
 3. Commit progress in small, reviewable checkpoints.
-4. Prefer API-first domain modeling so Flutter can reuse backend contracts.
+4. Prefer API-first design so Flutter reuses backend contracts.
