@@ -19,3 +19,5 @@ export async function requireCurrentUser() {
     },
   });
 }
+
+export type CurrentUser = NonNullable<Awaited<ReturnType<typeof requireCurrentUser>>>;

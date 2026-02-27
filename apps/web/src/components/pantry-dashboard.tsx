@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type HouseholdMember = {
   id: string;
-  role: "OWNER" | "MEMBER";
+  role: "OWNER" | "ADMIN" | "MEMBER";
   user: {
     id: string;
     name: string | null;

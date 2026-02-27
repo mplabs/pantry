@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { requireCurrentUser } from "@/lib/auth/current-user";
+import { requireRequestUser } from "@/lib/http/route-guards";
 import { prisma } from "@/lib/prisma";
 
 const acceptInviteSchema = z.object({
@@ -9,10 +9,11 @@ const acceptInviteSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const currentUser = await requireCurrentUser();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userResult = await requireRequestUser();
+  if (!userResult.ok) {
+    return userResult.response;
   }
+  const currentUser = userResult.value;
 
   const body = await request.json();
   const parsed = acceptInviteSchema.safeParse(body);

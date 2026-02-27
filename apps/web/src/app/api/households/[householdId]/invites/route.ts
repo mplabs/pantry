@@ -2,33 +2,32 @@ import crypto from "node:crypto";
 
 import { NextResponse } from "next/server";
 
-import { requireCurrentUser } from "@/lib/auth/current-user";
+import { canManageHouseholdInvites } from "@/lib/auth/household-policy";
+import {
+  requireHouseholdMembership,
+  requireRequestUser,
+} from "@/lib/http/route-guards";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: Request,
   context: { params: Promise<{ householdId: string }> },
 ) {
-  const currentUser = await requireCurrentUser();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userResult = await requireRequestUser();
+  if (!userResult.ok) {
+    return userResult.response;
   }
+  const currentUser = userResult.value;
 
   const { householdId } = await context.params;
-
-  const membership = await prisma.householdMembership.findUnique({
-    where: {
-      householdId_userId: {
-        householdId,
-        userId: currentUser.id,
-      },
-    },
-    select: {
-      role: true,
-    },
-  });
-
-  if (!membership) {
+  const membershipResult = await requireHouseholdMembership(
+    householdId,
+    currentUser.id,
+  );
+  if (!membershipResult.ok) {
+    return membershipResult.response;
+  }
+  if (!canManageHouseholdInvites(membershipResult.value)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

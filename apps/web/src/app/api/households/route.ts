@@ -2,7 +2,7 @@ import { HouseholdRole } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { requireCurrentUser } from "@/lib/auth/current-user";
+import { requireRequestUser } from "@/lib/http/route-guards";
 import { prisma } from "@/lib/prisma";
 
 const createHouseholdSchema = z.object({
@@ -11,11 +11,11 @@ const createHouseholdSchema = z.object({
 });
 
 export async function GET() {
-  const currentUser = await requireCurrentUser();
-
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userResult = await requireRequestUser();
+  if (!userResult.ok) {
+    return userResult.response;
   }
+  const currentUser = userResult.value;
 
   const households = await prisma.household.findMany({
     where: {
@@ -68,11 +68,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const currentUser = await requireCurrentUser();
-
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userResult = await requireRequestUser();
+  if (!userResult.ok) {
+    return userResult.response;
   }
+  const currentUser = userResult.value;
 
   const body = await request.json();
   const parsed = createHouseholdSchema.safeParse(body);

@@ -25,7 +25,7 @@ components:
           type: string
         role:
           type: string
-          enum: [OWNER, MEMBER]
+          enum: [OWNER, ADMIN, MEMBER]
         user:
           type: object
           properties:

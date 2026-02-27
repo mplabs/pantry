@@ -2,7 +2,10 @@ import { PantryCategory } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-import { requireCurrentUser } from "@/lib/auth/current-user";
+import {
+  requireHouseholdMembership,
+  requireRequestUser,
+} from "@/lib/http/route-guards";
 import { defaultShelfLifeDays } from "@/lib/inventory/category-defaults";
 import { addDays, statusForUseByDate } from "@/lib/inventory/freshness";
 import { normalizeTerm } from "@/lib/inventory/name-lexicon";
@@ -28,35 +31,23 @@ function parseDate(input: string): Date {
   return new Date(`${input}T00:00:00.000Z`);
 }
 
-async function assertMembership(householdId: string, userId: string) {
-  return prisma.householdMembership.findUnique({
-    where: {
-      householdId_userId: {
-        householdId,
-        userId,
-      },
-    },
-    select: {
-      id: true,
-      role: true,
-    },
-  });
-}
-
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ householdId: string }> },
 ) {
-  const currentUser = await requireCurrentUser();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userResult = await requireRequestUser();
+  if (!userResult.ok) {
+    return userResult.response;
   }
+  const currentUser = userResult.value;
 
   const { householdId } = await context.params;
-  const membership = await assertMembership(householdId, currentUser.id);
-
-  if (!membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const membershipResult = await requireHouseholdMembership(
+    householdId,
+    currentUser.id,
+  );
+  if (!membershipResult.ok) {
+    return membershipResult.response;
   }
 
   const query = normalizeTerm(request.nextUrl.searchParams.get("q") ?? "");
@@ -109,16 +100,19 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ householdId: string }> },
 ) {
-  const currentUser = await requireCurrentUser();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userResult = await requireRequestUser();
+  if (!userResult.ok) {
+    return userResult.response;
   }
+  const currentUser = userResult.value;
 
   const { householdId } = await context.params;
-  const membership = await assertMembership(householdId, currentUser.id);
-
-  if (!membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const membershipResult = await requireHouseholdMembership(
+    householdId,
+    currentUser.id,
+  );
+  if (!membershipResult.ok) {
+    return membershipResult.response;
   }
 
   const body = await request.json();
