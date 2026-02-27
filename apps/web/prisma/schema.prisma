@@ -1,11 +1,100 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum HouseholdRole {
+  OWNER
+  MEMBER
+}
+
+enum PantryCategory {
+  DAIRY
+  PRODUCE
+  MEAT
+  FROZEN
+  CANNED
+  GRAINS
+  LEGUMES
+  SPICES
+  BEVERAGES
+  BAKING
+  SNACKS
+  OTHER
+}
+
+model User {
+  id               String                @id @default(cuid())
+  email            String?               @unique
+  displayName      String
+  preferredLocales String                @default("en,de")
+  memberships      HouseholdMembership[]
+  itemsAdded       PantryItem[]          @relation("ItemsAdded")
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+}
+
+model Household {
+  id            String                @id @default(cuid())
+  name          String
+  defaultLocale String                @default("de")
+  memberships   HouseholdMembership[]
+  items         PantryItem[]
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+}
+
+model HouseholdMembership {
+  id          String        @id @default(cuid())
+  householdId String
+  userId      String
+  role        HouseholdRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@index([userId])
+}
+
+model PantryItem {
+  id                    String           @id @default(cuid())
+  householdId           String
+  addedByUserId         String
+  primaryName           String
+  normalizedPrimaryName String
+  canonicalName         String
+  quantity              Float
+  unit                  String?
+  category              PantryCategory   @default(OTHER)
+  location              String?
+  purchaseDate          DateTime         @default(now())
+  useByDate             DateTime?
+  shelfLifeDays         Int?
+  notes                 String?
+  names                 PantryItemName[]
+  household             Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  addedByUser           User             @relation("ItemsAdded", fields: [addedByUserId], references: [id], onDelete: Restrict)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([householdId, useByDate])
+  @@index([canonicalName])
+}
+
+model PantryItemName {
+  id             String     @id @default(cuid())
+  itemId         String
+  locale         String
+  text           String
+  normalizedText String
+  createdAt      DateTime   @default(now())
+  item           PantryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, normalizedText])
+  @@index([normalizedText])
 }
