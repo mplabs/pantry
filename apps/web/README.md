@@ -12,6 +12,14 @@ npm run db:init
 npm run dev
 ```
 
+For HTTPS in development (self-signed certificate):
+
+```bash
+npm run dev:https
+```
+
+Use `https://localhost:3000` in this mode. If you open the app via LAN IP (for example `https://10.10.10.170:3000`), the generated cert may not match that host.
+
 ## Required Environment Variables
 
 - `DATABASE_URL` (default: `file:./dev.db`)
