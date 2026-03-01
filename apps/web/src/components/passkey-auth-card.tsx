@@ -22,12 +22,14 @@ export function PasskeyAuthCard({
     setError("");
 
     try {
-      await signIn("passkey", {
+      const options = {
         email,
-        name: name || undefined,
-        action: explicitRegister ? "register" : undefined,
         redirectTo: "/",
-      });
+        ...(name.trim() ? { name: name.trim() } : {}),
+        ...(explicitRegister ? { action: "register" as const } : {}),
+      };
+
+      await signIn("passkey", options);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Passkey flow failed.");
       setPending(false);
