@@ -103,7 +103,16 @@ function formatDate(value: string | null): string {
     return "Auto from category";
   }
 
-  return new Date(value).toLocaleDateString();
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  const day = String(parsed.getUTCDate()).padStart(2, "0");
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+  const year = String(parsed.getUTCFullYear());
+
+  return `${day}. ${month}. ${year}`;
 }
 
 function inferUnitFromQuantityLabel(quantityLabel?: string): string | undefined {
