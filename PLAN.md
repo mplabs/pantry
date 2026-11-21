@@ -25,4 +25,4 @@
 3. Add purchasing orchestration endpoints using `PurchasingProvider` abstractions.
 4. Add invite management UI (revoke, list history, expiration controls).
 5. Add API tests and contract tests against OpenAPI.
-6. Start Swift (iOS/macOS) client scaffold in `apps/apple` using current API contract.
+6. Swift client scaffold landed in `apps/apple` (PantryKit + SwiftUI list app); next: passkey `AuthSession`, Xcode app project, iOS app bundle.
