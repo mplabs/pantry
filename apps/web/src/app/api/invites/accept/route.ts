@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { rateLimit, tooManyRequests } from "@/lib/http/rate-limit";
 import { requireRequestUser } from "@/lib/http/route-guards";
 import { prisma } from "@/lib/prisma";
 
@@ -14,6 +15,12 @@ export async function POST(request: NextRequest) {
     return userResult.response;
   }
   const currentUser = userResult.value;
+
+  // Per-user cap slows invite-token guessing.
+  const limit = rateLimit(`invite:${currentUser.id}`, 10, 60_000);
+  if (!limit.ok) {
+    return tooManyRequests(limit.retryAfterSeconds);
+  }
 
   const body = await request.json();
   const parsed = acceptInviteSchema.safeParse(body);

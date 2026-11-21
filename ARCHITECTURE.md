@@ -30,6 +30,9 @@ This directly supports "select a household and see shared households" with link-
 - Auth.js v5 + Prisma adapter.
 - Passkey provider (`next-auth/providers/passkey`).
 - Session-backed route protection.
+- Session policy: database sessions, 30-day `maxAge`, 24h `updateAge` (sliding). Secure cookies in production; `trustHost` is on in dev and in prod only with `AUTH_TRUST_HOST=true` (set `AUTH_URL` + `AUTH_SECRET`).
+- Abuse limits: in-memory sliding window (`lib/http/rate-limit.ts`) on passkey options/callback (20/min/IP) and invite accept (10/min/user), returning 429 + `Retry-After`. Per-process only; move to Redis/DB counters if running multiple instances. IP comes from `X-Forwarded-For`, so only trustworthy behind a proxy that sets it.
+- Recovery: no schema changes, so recovery = add a second passkey from a signed-in session ("Add passkey"); the sign-in card tells users this. Known gap: no self-service recovery if all passkeys are lost (needs email magic-link/recovery codes + schema/provider work).
 
 3. API (Next.js route handlers)
 - `/api/households`: list/create households for current user.
