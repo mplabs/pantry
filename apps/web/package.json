@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:init": "rm -f prisma/dev.db && mkdir -p prisma && sqlite3 prisma/dev.db < prisma/init.sql",
     "db:seed-demo": "node ./scripts/seed-demo.mjs",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "test": "vitest run"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -32,6 +33,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "prisma": "^6.16.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.12",
+    "yaml": "^2.9.1"
   }
 }
