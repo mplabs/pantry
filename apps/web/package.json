@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:init": "rm -f prisma/dev.db && mkdir -p prisma && sqlite3 prisma/dev.db < prisma/init.sql",
-    "db:seed-demo": "node ./scripts/seed-demo.mjs",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:init": "npm run db:deploy",
+    "db:reset": "prisma migrate reset --force --skip-seed",
+    "db:seed-demo": "node --env-file=.env ./scripts/seed-demo.mjs",
     "prisma:generate": "prisma generate",
     "test": "vitest run"
   },

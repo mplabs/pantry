@@ -14,6 +14,8 @@ npm run dev
 
 `npm run dev` now starts HTTPS development mode (self-signed certificate). Use `https://localhost:3000`. If you open the app via LAN IP (for example `https://10.10.10.170:3000`), the generated cert may not match that host.
 
+Database scripts: `db:init`/`db:deploy` apply migrations, `db:migrate` creates a new one (dev), `db:reset` wipes and re-applies, `db:seed-demo` adds demo data. Details: `../ARCHITECTURE.md`.
+
 ## Required Environment Variables
 
 - `DATABASE_URL` (default: `file:./dev.db`)

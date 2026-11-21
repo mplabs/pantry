@@ -43,5 +43,5 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Notes
 
-- The app currently boots SQLite schema via `npm run db:init`.
+- The SQLite schema is created from Prisma migrations via `npm run db:init` (see "Database Migrations" in `ARCHITECTURE.md`).
 - OpenAPI spec for Swift client generation: `apps/web/openapi.yaml`.

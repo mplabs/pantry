@@ -54,9 +54,16 @@ This directly supports "select a household and see shared households" with link-
 
 5. Persistence
 - Prisma schema in `apps/web/prisma/schema.prisma`.
-- SQLite bootstrap in `apps/web/prisma/init.sql`.
+- SQLite schema is managed by Prisma Migrations in `apps/web/prisma/migrations/` (committed; `*.db` is gitignored).
 - Auth tables (`User`, `Account`, `Session`, `Authenticator`) + pantry domain tables.
 - Product catalog cache table (`ProductCatalogItem`) for barcode lookups.
+
+### Database Migrations
+
+- Fresh checkout / CI / tests: `npm run db:deploy` (alias `db:init`) applies all migrations (`prisma migrate deploy`). `npm run db:reset` wipes the dev DB and re-applies them.
+- Add a migration: edit `prisma/schema.prisma`, run `npm run db:migrate -- --name <change>`, commit the generated `prisma/migrations/<ts>_<change>/` folder together with the schema change. Never edit an applied migration.
+- Tests build their temp DB with `prisma migrate deploy` (`tests/global-setup.ts`).
+- Baselining an existing dev DB created from the old `init.sql` (tables exist, no `_prisma_migrations`): run `npx prisma migrate resolve --applied 20260101000000_init`, then `npx prisma migrate status` should be clean. Or just `npm run db:reset` if the data is disposable.
 
 ## Language-Independent Ingredient Strategy
 
