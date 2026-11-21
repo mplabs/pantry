@@ -441,6 +441,42 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
     }
   }
 
+  async function itemAction(item: PantryItem, action: "use" | "edit" | "delete") {
+    const base = `/api/households/${activeHouseholdId}/items/${item.id}`;
+    const json = { "Content-Type": "application/json" };
+    let request: Promise<Response>;
+
+    if (action === "use") {
+      request = fetch(`${base}/decrement`, { method: "POST", headers: json, body: JSON.stringify({ amount: 1 }) });
+    } else if (action === "delete") {
+      if (!window.confirm(`Delete ${item.primaryName}?`)) return;
+      request = fetch(base, { method: "DELETE" });
+    } else {
+      // ponytail: prompt-based edit; swap for an inline form if more fields are needed.
+      const name = window.prompt("Name", item.primaryName)?.trim();
+      if (!name) return;
+      const quantity = Number(window.prompt("Quantity", String(item.quantity)));
+      if (!(quantity > 0)) {
+        setError("Quantity must be a positive number.");
+        return;
+      }
+      request = fetch(base, { method: "PATCH", headers: json, body: JSON.stringify({ name, quantity }) });
+    }
+
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      const response = await request;
+      if (response.status !== 204) await parseResponse(response);
+      await loadItems(activeHouseholdId);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Item update failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function resolveRecipeIngredients() {
     const ingredients = recipeText
       .split("\n")
@@ -775,12 +811,13 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
                 <th className="px-2 py-2">Use-by</th>
                 <th className="px-2 py-2">Status</th>
                 <th className="px-2 py-2">Aliases</th>
+                <th className="px-2 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-2 py-4 text-center text-slate-500">
+                  <td colSpan={8} className="px-2 py-4 text-center text-slate-500">
                     No items found.
                   </td>
                 </tr>
@@ -813,6 +850,19 @@ export function PantryDashboard({ user }: PantryDashboardProps) {
                     </td>
                     <td className="px-2 py-2 text-xs text-slate-600">
                       {item.names.map((alias) => `${alias.locale}:${alias.text}`).join(", ")}
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex gap-1">
+                        <button type="button" disabled={busy} className="rounded border border-slate-300 px-2 py-0.5 text-xs disabled:opacity-50" onClick={() => itemAction(item, "use")}>
+                          Use one
+                        </button>
+                        <button type="button" disabled={busy} className="rounded border border-slate-300 px-2 py-0.5 text-xs disabled:opacity-50" onClick={() => itemAction(item, "edit")}>
+                          Edit
+                        </button>
+                        <button type="button" disabled={busy} className="rounded border border-slate-300 px-2 py-0.5 text-xs disabled:opacity-50" onClick={() => itemAction(item, "delete")}>
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

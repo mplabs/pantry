@@ -187,6 +187,102 @@ paths:
       responses:
         '201':
           description: Item created
+  /api/households/{householdId}/items/{itemId}:
+    parameters:
+      - in: path
+        name: householdId
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: itemId
+        required: true
+        schema:
+          type: string
+    patch:
+      summary: Update inventory item (partial)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: At least one field. Changing name or localizedNames re-derives canonical name and aliases.
+              properties:
+                name:
+                  type: string
+                quantity:
+                  type: number
+                unit:
+                  type: string
+                  nullable: true
+                category:
+                  type: string
+                location:
+                  type: string
+                  nullable: true
+                useByDate:
+                  type: string
+                  format: date
+                  nullable: true
+                notes:
+                  type: string
+                  nullable: true
+                localizedNames:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        '200':
+          description: Updated item
+        '400':
+          description: Validation error
+        '403':
+          description: Not a household member
+        '404':
+          description: Item not found in household
+    delete:
+      summary: Delete inventory item
+      responses:
+        '204':
+          description: Item deleted
+        '403':
+          description: Not a household member
+        '404':
+          description: Item not found in household
+  /api/households/{householdId}/items/{itemId}/decrement:
+    post:
+      summary: Use up stock; the item is deleted when the amount reaches or exceeds the remaining quantity
+      parameters:
+        - in: path
+          name: householdId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  exclusiveMinimum: 0
+                  default: 1
+      responses:
+        '200':
+          description: "{ deleted, item } - item is null when stock reached zero and the item was removed"
+        '400':
+          description: Validation error
+        '403':
+          description: Not a household member
+        '404':
+          description: Item not found in household
   /api/households/{householdId}/invites:
     post:
       summary: Generate invite link for a household
