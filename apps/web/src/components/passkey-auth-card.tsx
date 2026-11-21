@@ -84,6 +84,11 @@ export function PasskeyAuthCard({
         </button>
       </div>
 
+      <p className="text-xs text-slate-500">
+        Lost your passkey? Sign in on another device that still has one and use &ldquo;Add passkey&rdquo; to register a
+        replacement. Without any working passkey there is no self-service recovery yet.
+      </p>
+
       {error ? <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
     </section>
   );
