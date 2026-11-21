@@ -107,10 +107,8 @@ describe("items", () => {
     expect(fresh.items).toHaveLength(0);
   });
 
-  // BUG: item POST 500s (unique itemId+normalizedText) when the name is a lexicon term, because
-  // dedupeAliases keys on locale+text while the DB index ignores locale ("milk" = en:milk + und:milk).
-  // it.fails flips red once fixed; then switch it to plain `it`.
-  it.fails("creates an item whose name is a lexicon term", async () => {
+  // Regression: aliases must dedupe on text alone, since the DB unique index ignores locale.
+  it("creates an item whose name is a lexicon term", async () => {
     const user = await makeUser();
     const household = await makeHousehold(user.id);
     loginAs(user);
@@ -184,9 +182,7 @@ describe("ingredient resolve", () => {
     expect(typeof body.llmEnabled).toBe("boolean");
   });
 
-  // BUG: with the noop translator (no LLM) canonical is the normalized input, which overrides the
-  // lexicon, so "Eier" resolves to "eier" instead of "eggs". it.fails flips red once fixed.
-  it.fails("maps German lexicon terms to the English canonical without an LLM", async () => {
+  it("maps German lexicon terms to the English canonical without an LLM", async () => {
     loginAs(await makeUser());
     const res = await resolveIngredients(req("/x", { ingredients: ["Eier"] }));
     expect((await res.json()).normalized[0].canonical).toBe("eggs");

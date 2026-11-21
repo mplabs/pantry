@@ -10,7 +10,8 @@ function dedupeAliases(aliases: LocalizedTerm[]): LocalizedTerm[] {
   const seen = new Set<string>();
 
   return aliases.filter((alias) => {
-    const key = `${alias.locale}:${normalizeTerm(alias.text)}`;
+    // Key on text only: the DB unique index (itemId, normalizedText) ignores locale.
+    const key = normalizeTerm(alias.text);
     if (seen.has(key)) {
       return false;
     }
@@ -32,7 +33,9 @@ export async function normalizeIngredient(
   const translator = buildIngredientTranslator();
   const llm = await translator.normalize(input);
 
-  const canonical = llm.canonical?.trim() ? normalizeTerm(llm.canonical) : lexicalCanonical;
+  // A lexicon hit wins; the translator only decides for terms the lexicon doesn't know.
+  const canonical =
+    lexicalAliases.length === 0 && llm.canonical?.trim() ? normalizeTerm(llm.canonical) : lexicalCanonical;
 
   const manualAliases = Object.entries(localizedNames ?? {}).map(([locale, text]) => ({
     locale,
