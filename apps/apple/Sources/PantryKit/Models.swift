@@ -88,10 +88,15 @@ public struct AcceptInviteResponse: Codable, Sendable {
     public let household: HouseholdRef
 }
 
+public struct LocalizedTerm: Codable, Hashable, Sendable {
+    public let locale: String
+    public let text: String
+}
+
 public struct ResolvedIngredient: Codable, Hashable, Sendable {
     public let input: String
     public let canonical: String
-    public let aliases: [String]
+    public let aliases: [LocalizedTerm]
 }
 
 public struct ResolveIngredientsResponse: Codable, Sendable {

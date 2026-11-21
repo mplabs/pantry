@@ -14,4 +14,10 @@ final class DecodingTests: XCTestCase {
         let r = try APIClient.decoder.decode(HouseholdsResponse.self, from: Data(json.utf8))
         XCTAssertEqual(r.households[0].memberships[0].role, .OWNER)
     }
+
+    func testResolveIngredientsDecodesLocalizedAliases() throws {
+        let json = #"{"normalized":[{"input":"Milch","canonical":"milk","aliases":[{"locale":"en","text":"milk"},{"locale":"de","text":"milch"}]}],"llmEnabled":false}"#
+        let r = try APIClient.decoder.decode(ResolveIngredientsResponse.self, from: Data(json.utf8))
+        XCTAssertEqual(r.normalized[0].aliases[1], LocalizedTerm(locale: "de", text: "milch"))
+    }
 }

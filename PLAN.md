@@ -16,16 +16,16 @@
 12. Add API tests (Vitest) and an OpenAPI contract test (`npm test` in `apps/web`).
 13. Scaffold Swift client in `apps/apple` (PantryKit + SwiftUI list app).
 14. Fix lexicon-name item creation 500 and noop-translator lexicon override.
+15. Replace SQLite bootstrap with Prisma migrations (`db:migrate`, `db:deploy`, `db:reset`).
+16. Add OpenAPI response/error schemas for all routes; fix Swift `aliases` decoding.
 
 ## In Progress
 
 1. Auth hardening: session policy and rate limits landed; remaining: self-service recovery when all passkeys are lost, confirm behavior when registering a passkey for an existing email.
-2. Replace deterministic SQLite bootstrap with robust migration workflow.
 
 ## Next
 
 1. Add low-stock thresholds and recurring-needs model.
 2. Add purchasing orchestration endpoints using `PurchasingProvider` abstractions.
 3. Add invite management UI (revoke, list history, expiration controls).
-4. Add OpenAPI response schemas for households, invites, accept, resolve, barcode (Swift models currently mirror route handlers).
-5. Swift client: passkey `AuthSession`, Xcode app project (signing, ATS, associated domain), sign-in UI.
+4. Swift client: passkey `AuthSession`, Xcode app project (signing, ATS, associated domain), sign-in UI.
