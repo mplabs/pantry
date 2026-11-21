@@ -5,7 +5,7 @@
 Pantry OS is a shared-household pantry system with:
 
 - Web client now (Next.js + Tailwind).
-- Flutter client next (reusing backend API contracts).
+- Swift/SwiftUI client for iOS and macOS next (reusing backend API contracts).
 - Auth.js passkeys for authentication.
 - Language-independent ingredient handling for EN recipes and DE shopping.
 
@@ -63,10 +63,10 @@ This directly supports "select a household and see shared households" with link-
 - Optional LLM normalization augments deterministic lexicon fallback.
 - This supports mapping English recipe ingredients to German shopping terms.
 
-## Mobile/Flutter Readiness
+## Native Client (Swift) Readiness
 
 - API-first architecture and OpenAPI spec (`apps/web/openapi.yaml`).
-- Flutter client can consume existing household, invite, inventory, and language endpoints.
+- Swift client can consume existing household, invite, inventory, and language endpoints.
 
 ## Future Extensions
 

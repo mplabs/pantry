@@ -10,7 +10,7 @@
 6. Implement category shelf-life defaults and freshness statuses.
 7. Implement language-independent ingredient normalization endpoint.
 8. Add Tailwind-based web UI refresh.
-9. Publish OpenAPI contract for Flutter integration (`apps/web/openapi.yaml`).
+9. Publish OpenAPI contract for native client integration (`apps/web/openapi.yaml`).
 10. Add barcode lookup flow with camera/USB input and product metadata caching.
 
 ## In Progress
@@ -25,4 +25,4 @@
 3. Add purchasing orchestration endpoints using `PurchasingProvider` abstractions.
 4. Add invite management UI (revoke, list history, expiration controls).
 5. Add API tests and contract tests against OpenAPI.
-6. Start Flutter client scaffold using current API contract.
+6. Start Swift (iOS/macOS) client scaffold in `apps/apple` using current API contract.

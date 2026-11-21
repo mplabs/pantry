@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Pantry OS API
   version: 0.1.0
-  description: API contract for the Pantry OS web backend and future Flutter client.
+  description: API contract for the Pantry OS web backend and future Swift (iOS/macOS) client.
 servers:
   - url: http://localhost:3000
 components:

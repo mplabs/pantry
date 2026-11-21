@@ -9,7 +9,7 @@ Pantry OS is a web-first pantry inventory platform for shared households.
 - Shared households with invite links.
 - Category-based shelf-life defaults and use-by tracking.
 - English UI, with language-independent ingredient normalization for EN/DE shopping flows.
-- OpenAPI contract for upcoming Flutter client integration.
+- OpenAPI contract for upcoming Swift (iOS/macOS) client integration.
 
 ## Repository Layout
 
@@ -44,4 +44,4 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Notes
 
 - The app currently boots SQLite schema via `npm run db:init`.
-- OpenAPI spec for Flutter/client generation: `apps/web/openapi.yaml`.
+- OpenAPI spec for Swift client generation: `apps/web/openapi.yaml`.
