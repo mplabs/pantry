@@ -17,7 +17,112 @@ components:
       properties:
         error:
           type: string
+        details:
+          type: object
+          description: Zod flatten() output, present on 400 validation errors.
+          additionalProperties: true
       required: [error]
+    UserRef:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: [string, 'null']
+        email:
+          type: string
+      required: [id, email]
+    CurrentUser:
+      allOf:
+        - $ref: '#/components/schemas/UserRef'
+        - type: object
+          properties:
+            preferredLocales:
+              type: string
+              description: Comma-separated locale list, e.g. "en,de".
+          required: [preferredLocales]
+    PantryCategory:
+      type: string
+      enum: [DAIRY, PRODUCE, MEAT, FROZEN, CANNED, GRAINS, LEGUMES, SPICES, BEVERAGES, BAKING, SNACKS, OTHER]
+    FreshnessStatus:
+      type: string
+      enum: [fresh, expiring, expired]
+    LocalizedTerm:
+      type: object
+      properties:
+        locale:
+          type: string
+        text:
+          type: string
+      required: [locale, text]
+    Invite:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+      required: [token, expiresAt]
+    HouseholdInviteSummary:
+      type: object
+      description: Open (unaccepted, unexpired) invite as embedded in GET /api/households.
+      properties:
+        id:
+          type: string
+        token:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        createdByUserId:
+          type: string
+      required: [id, token, createdAt, expiresAt, createdByUserId]
+    HouseholdRef:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required: [id, name]
+    ResolvedIngredient:
+      type: object
+      properties:
+        input:
+          type: string
+        canonical:
+          type: string
+        aliases:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocalizedTerm'
+      required: [input, canonical, aliases]
+    Product:
+      type: object
+      properties:
+        barcode:
+          type: string
+        source:
+          type: string
+        productName:
+          type: string
+        normalizedProductName:
+          type: string
+        brand:
+          type: string
+        quantityLabel:
+          type: string
+        imageUrl:
+          type: string
+        category:
+          $ref: '#/components/schemas/PantryCategory'
+        fromCache:
+          type: boolean
+      required: [barcode, source, productName, normalizedProductName, category, fromCache]
     HouseholdMember:
       type: object
       properties:
@@ -32,8 +137,7 @@ components:
             id:
               type: string
             name:
-              type: string
-              nullable: true
+              type: [string, 'null']
             email:
               type: string
           required: [id, email]
@@ -52,30 +156,111 @@ components:
           items:
             $ref: '#/components/schemas/HouseholdMember'
       required: [id, name, defaultLocale, memberships]
+    PantryItemName:
+      type: object
+      properties:
+        id:
+          type: string
+        itemId:
+          type: string
+        locale:
+          type: string
+        text:
+          type: string
+        normalizedText:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, itemId, locale, text, normalizedText, createdAt]
     PantryItem:
       type: object
       properties:
         id:
           type: string
-        barcode:
+        householdId:
           type: string
-          nullable: true
+        addedByUserId:
+          type: string
+        barcode:
+          type: [string, 'null']
         primaryName:
+          type: string
+        normalizedPrimaryName:
           type: string
         canonicalName:
           type: string
         quantity:
           type: number
         unit:
-          type: string
-          nullable: true
+          type: [string, 'null']
         category:
-          type: string
-        useByDate:
+          $ref: '#/components/schemas/PantryCategory'
+        location:
+          type: [string, 'null']
+        purchaseDate:
           type: string
           format: date-time
-          nullable: true
-      required: [id, primaryName, canonicalName, quantity, category]
+        useByDate:
+          type: [string, 'null']
+          format: date-time
+        shelfLifeDays:
+          type: [integer, 'null']
+        notes:
+          type: [string, 'null']
+        names:
+          type: array
+          items:
+            $ref: '#/components/schemas/PantryItemName'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, householdId, addedByUserId, primaryName, normalizedPrimaryName, canonicalName, quantity, category, purchaseDate, names, createdAt, updatedAt]
+    PantryItemWithStatus:
+      description: Item as returned by the list endpoint, with derived freshness and addedByUser.
+      allOf:
+        - $ref: '#/components/schemas/PantryItem'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/FreshnessStatus'
+            addedByUser:
+              $ref: '#/components/schemas/UserRef'
+          required: [status, addedByUser]
+  responses:
+    Unauthorized:
+      description: Not signed in
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Not a household member
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Validation error (invalid body or path parameter)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ItemNotFound:
+      description: Item not found in household
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 security:
   - sessionCookie: []
 paths:
@@ -85,12 +270,28 @@ paths:
       responses:
         '200':
           description: User households
-        '401':
-          description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  households:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/Household'
+                        - type: object
+                          properties:
+                            invites:
+                              type: array
+                              items:
+                                $ref: '#/components/schemas/HouseholdInviteSummary'
+                          required: [invites]
+                  currentUser:
+                    $ref: '#/components/schemas/CurrentUser'
+                required: [households, currentUser]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     post:
       summary: Create a household
       requestBody:
@@ -108,8 +309,18 @@ paths:
       responses:
         '201':
           description: Household created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  household:
+                    $ref: '#/components/schemas/Household'
+                required: [household]
         '400':
-          description: Validation error
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/households/{householdId}/items:
     get:
       summary: List inventory items for a household
@@ -126,8 +337,7 @@ paths:
         - in: query
           name: status
           schema:
-            type: string
-            enum: [fresh, expiring, expired]
+            $ref: '#/components/schemas/FreshnessStatus'
       responses:
         '200':
           description: Item list
@@ -139,9 +349,12 @@ paths:
                   items:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PantryItem'
+                      $ref: '#/components/schemas/PantryItemWithStatus'
+                required: [items]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Not a household member
+          $ref: '#/components/responses/Forbidden'
     post:
       summary: Create inventory item
       parameters:
@@ -166,7 +379,7 @@ paths:
                 unit:
                   type: string
                 category:
-                  type: string
+                  $ref: '#/components/schemas/PantryCategory'
                 location:
                   type: string
                 purchaseDate:
@@ -187,6 +400,20 @@ paths:
       responses:
         '201':
           description: Item created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/PantryItem'
+                required: [item]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/households/{householdId}/items/{itemId}:
     parameters:
       - in: path
@@ -214,20 +441,16 @@ paths:
                 quantity:
                   type: number
                 unit:
-                  type: string
-                  nullable: true
+                  type: [string, 'null']
                 category:
-                  type: string
+                  $ref: '#/components/schemas/PantryCategory'
                 location:
-                  type: string
-                  nullable: true
+                  type: [string, 'null']
                 useByDate:
-                  type: string
+                  type: [string, 'null']
                   format: date
-                  nullable: true
                 notes:
-                  type: string
-                  nullable: true
+                  type: [string, 'null']
                 localizedNames:
                   type: object
                   additionalProperties:
@@ -235,21 +458,33 @@ paths:
       responses:
         '200':
           description: Updated item
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/PantryItem'
+                required: [item]
         '400':
-          description: Validation error
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Not a household member
+          $ref: '#/components/responses/Forbidden'
         '404':
-          description: Item not found in household
+          $ref: '#/components/responses/ItemNotFound'
     delete:
       summary: Delete inventory item
       responses:
         '204':
           description: Item deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Not a household member
+          $ref: '#/components/responses/Forbidden'
         '404':
-          description: Item not found in household
+          $ref: '#/components/responses/ItemNotFound'
   /api/households/{householdId}/items/{itemId}/decrement:
     post:
       summary: Use up stock; the item is deleted when the amount reaches or exceeds the remaining quantity
@@ -276,16 +511,31 @@ paths:
                   default: 1
       responses:
         '200':
-          description: "{ deleted, item } - item is null when stock reached zero and the item was removed"
+          description: Item decremented, or removed when stock reached zero
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                  item:
+                    oneOf:
+                      - $ref: '#/components/schemas/PantryItem'
+                      - type: 'null'
+                    description: Null when the item was deleted.
+                required: [deleted, item]
         '400':
-          description: Validation error
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Not a household member
+          $ref: '#/components/responses/Forbidden'
         '404':
-          description: Item not found in household
+          $ref: '#/components/responses/ItemNotFound'
   /api/households/{householdId}/invites:
     post:
-      summary: Generate invite link for a household
+      summary: Generate invite link for a household (OWNER/ADMIN only)
       parameters:
         - in: path
           name: householdId
@@ -294,9 +544,26 @@ paths:
             type: string
       responses:
         '201':
-          description: Invite link generated
+          description: Invite link generated (valid 7 days)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invite:
+                    $ref: '#/components/schemas/Invite'
+                  inviteUrl:
+                    type: string
+                    format: uri
+                required: [invite, inviteUrl]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: Not a household member
+          description: Not a household member, or role is not OWNER/ADMIN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/invites/accept:
     post:
       summary: Accept invite token and join household
@@ -309,14 +576,49 @@ paths:
               properties:
                 token:
                   type: string
+                  minLength: 10
+                  maxLength: 256
               required: [token]
       responses:
         '200':
-          description: Invite accepted
+          description: Invite accepted; caller is now a MEMBER (idempotent if already one)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  household:
+                    $ref: '#/components/schemas/HouseholdRef'
+                required: [household]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Invite not found
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Invite already used
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '410':
           description: Invite expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited (10 requests per minute per user)
+          headers:
+            Retry-After:
+              description: Seconds until the next attempt is allowed
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/language/ingredients/resolve:
     post:
       summary: Normalize ingredient names to language-independent canonical keys
@@ -329,12 +631,32 @@ paths:
               properties:
                 ingredients:
                   type: array
+                  minItems: 1
+                  maxItems: 50
                   items:
                     type: string
+                    minLength: 1
+                    maxLength: 120
               required: [ingredients]
       responses:
         '200':
           description: Resolved ingredient names and aliases
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  normalized:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ResolvedIngredient'
+                  llmEnabled:
+                    type: boolean
+                required: [normalized, llmEnabled]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/products/barcode/{barcode}:
     get:
       summary: Resolve a barcode to a known product record
@@ -347,5 +669,21 @@ paths:
       responses:
         '200':
           description: Product resolved by barcode
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  product:
+                    $ref: '#/components/schemas/Product'
+                required: [product]
+        '400':
+          description: Invalid barcode (must be 8-14 digits)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
-          description: Product not found
+          $ref: '#/components/responses/NotFound'
