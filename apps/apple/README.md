@@ -50,7 +50,7 @@ follow the route handlers in `apps/web/src/app/api`. Models are hand-written; ge
 
 ## TODO: authentication
 
-Auth.js passkeys use a cookie session (`authjs.session-token`). **Passkey login is not implemented** (`PasskeyAuthSession` is a stub throwing `notImplemented`).**
+Auth.js passkeys use a cookie session (`authjs.session-token`). **Passkey login is not implemented** (`PasskeyAuthSession` is a stub throwing `notImplemented`).
 `AuthSession` (`authorize(_ request:)`) is the seam: implement a passkey-backed session
 (`ASAuthorizationPlatformPublicKeyCredentialProvider` against the Auth.js WebAuthn endpoints, cookie
 stored in Keychain) and pass it to `APIClient`. Until then, `StaticCookieSession` is a dev stand-in.
