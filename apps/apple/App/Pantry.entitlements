@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- PLACEHOLDER for passkeys: once a real domain exists add
+	     com.apple.developer.associated-domains = [ "webcredentials:YOUR-DOMAIN" ]
+	     (see apps/apple/README.md). Intentionally empty. -->
+</dict>
+</plist>
