@@ -1,24 +1,37 @@
 # Pantry Apple client (iOS + macOS)
 
-SwiftUI client scaffold. Swift Package, no hand-written `.xcodeproj`.
+SwiftUI client. Swift Package plus an XcodeGen-generated app project (`project.yml`).
 
 - `PantryKit` - async/await `APIClient` (URLSession, configurable `baseURL`), Codable models, `AuthSession` seam.
-- `PantryApp` - minimal SwiftUI app: households list -> items list. Targets iOS 17 / macOS 14.
+- `PantryApp` - shared SwiftUI views: sign-in, households list -> items list. Targets iOS 17 / macOS 14.
 
 ## Build / run
 
 ```sh
 cd apps/apple
-swift build && swift test      # macOS host
-open Package.swift             # Xcode: pick the PantryApp scheme, run on a Mac or iOS simulator
+swift build && swift test      # package only (macOS host)
+brew install xcodegen          # once
+xcodegen generate              # project.yml -> Pantry.xcodeproj (git-ignored, regenerate on changes)
+open Pantry.xcodeproj          # scheme "Pantry": run on My Mac or an iOS 17 simulator
+xcodebuild -project Pantry.xcodeproj -scheme Pantry -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
 ```
 
-`swift build` only builds for macOS. The iOS build and a proper app bundle (Info.plist,
-ATS exception for http://localhost, signing, passkey entitlements) need an Xcode app project
-that depends on this package; the executable target is just the SwiftUI sources.
+The Xcode app target (`project.yml`) is multiplatform (iOS 17 / macOS 14), depends on the local
+`PantryKit` package and compiles the shared SwiftUI views in `Sources/PantryApp` (everything except
+the SPM-only `PantryAppMain.swift`) plus `App/` (`@main`, `Info.plist`, entitlements). Verified:
+macOS and iOS Simulator builds succeed unsigned.
 
-Dev run against the web backend: set `PANTRY_BASE_URL` (default `http://localhost:3000`) and
-`PANTRY_SESSION_COOKIE` (value of the `authjs.session-token` cookie from a signed-in browser).
+- ATS: `App/Info.plist` allows cleartext HTTP to `localhost` only. DEV ONLY; drop for release builds.
+- Signing: set `DEVELOPMENT_TEAM` locally (not committed) for device builds.
+- Passkey entitlement placeholder: `App/Pantry.entitlements` is empty. Once the web app has a real
+  domain, add `com.apple.developer.associated-domains = ["webcredentials:<domain>"]` there, host
+  `/.well-known/apple-app-site-association` (`webcredentials.apps: ["<TEAMID>.app.pantry.client"]`) on
+  that domain, and set the matching WebAuthn RP ID in Auth.js. No domain is invented here.
+
+Sign-in screen (`SignInView`): base URL field + "Sign in" (calls `PasskeyAuthSession`, currently throws
+`notImplemented`) and a dev-only "paste `authjs.session-token`" fallback. Base URL and cookie are kept in
+Keychain (`KeychainStore`); `PANTRY_BASE_URL` / `PANTRY_SESSION_COOKIE` env vars still seed them.
+Keychain on macOS needs a signed build; unsigned runs may silently fail to persist.
 
 ## Mapping to `apps/web/openapi.yaml`
 
@@ -37,7 +50,7 @@ follow the route handlers in `apps/web/src/app/api`. Models are hand-written; ge
 
 ## TODO: authentication
 
-Auth.js passkeys use a cookie session (`authjs.session-token`). **Passkey login is not implemented.**
+Auth.js passkeys use a cookie session (`authjs.session-token`). **Passkey login is not implemented** (`PasskeyAuthSession` is a stub throwing `notImplemented`).**
 `AuthSession` (`authorize(_ request:)`) is the seam: implement a passkey-backed session
 (`ASAuthorizationPlatformPublicKeyCredentialProvider` against the Auth.js WebAuthn endpoints, cookie
 stored in Keychain) and pass it to `APIClient`. Until then, `StaticCookieSession` is a dev stand-in.

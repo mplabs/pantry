@@ -1,0 +1,35 @@
+name: Pantry
+options:
+  bundleIdPrefix: app.pantry
+  deploymentTarget: { iOS: "17.0", macOS: "14.0" }
+packages:
+  Pantry: { path: . }   # local package: PantryKit
+targets:
+  Pantry:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - App
+      - path: Sources/PantryApp
+        excludes: [PantryAppMain.swift]   # SPM-only @main
+    dependencies:
+      - package: Pantry
+        product: PantryKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.pantry.client
+        MARKETING_VERSION: "0.1.0"
+        CODE_SIGN_ENTITLEMENTS: App/Pantry.entitlements
+        CODE_SIGN_STYLE: Automatic
+        # Set DEVELOPMENT_TEAM locally for device builds / associated domains.
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Pantry
+        UILaunchScreen: {}
+        NSAppTransportSecurity:
+          # DEV ONLY: allow cleartext http to the local backend. Remove for release builds.
+          NSExceptionDomains:
+            localhost:
+              NSExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: false

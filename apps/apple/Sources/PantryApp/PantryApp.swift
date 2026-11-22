@@ -1,21 +1,6 @@
 import SwiftUI
 import PantryKit
 
-@main
-struct PantryApp: App {
-    var body: some Scene {
-        WindowGroup { HouseholdListView(client: Self.makeClient()) }
-    }
-
-    // ponytail: dev wiring via env vars; replace with sign-in UI once passkey AuthSession exists.
-    static func makeClient() -> APIClient {
-        let env = ProcessInfo.processInfo.environment
-        let base = env["PANTRY_BASE_URL"].flatMap(URL.init(string:)) ?? URL(string: "http://localhost:3000")!
-        let auth: AuthSession = env["PANTRY_SESSION_COOKIE"].map { StaticCookieSession(value: $0) } ?? AnonymousSession()
-        return APIClient(baseURL: base, session: auth)
-    }
-}
-
 struct HouseholdListView: View {
     let client: APIClient
     @State private var households: [Household] = []
