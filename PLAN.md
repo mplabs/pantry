@@ -18,6 +18,8 @@
 14. Fix lexicon-name item creation 500 and noop-translator lexicon override.
 15. Replace SQLite bootstrap with Prisma migrations (`db:migrate`, `db:deploy`, `db:reset`).
 16. Add OpenAPI response/error schemas for all routes; fix Swift `aliases` decoding.
+17. Purchasing: mock provider + search and cart-preview endpoints (no checkout).
+18. Swift: XcodeGen project (iOS 17 + macOS 14), sign-in screen, Keychain session store.
 
 ## In Progress
 
@@ -28,4 +30,4 @@
 1. Add low-stock thresholds and recurring-needs model.
 2. Purchasing orchestration: mock provider + search/cart-preview endpoints done; real REWE/Ökomarktgemeinschaft adapters and checkout remain.
 3. Add invite management UI (revoke, list history, expiration controls).
-4. Swift client: passkey `AuthSession`, Xcode app project (signing, ATS, associated domain), sign-in UI.
+4. Swift client: real passkey `AuthSession` (WebAuthn against Auth.js), associated domain + signing, item create/invite/barcode UI; runtime-test the sign-in and Keychain flow.
