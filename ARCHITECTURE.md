@@ -50,7 +50,10 @@ This directly supports "select a household and see shared households" with link-
 - `language/translator.ts`: optional LLM-backed normalization when `OPENAI_API_KEY` exists.
 - `barcode/openfoodfacts.ts`: external barcode product lookup adapter.
 - `barcode/catalog.ts`: product cache orchestration and local upsert logic.
-- `purchasing/provider.ts`: abstract purchasing provider interface.
+- `purchasing/provider.ts`: abstract purchasing provider interface (`searchOffers`, `submitOrder`).
+- `purchasing/mock-provider.ts` + `registry.ts`: deterministic mock provider (default); pick via `PURCHASING_PROVIDER`. REWE / Ökomarktgemeinschaft adapters register here later.
+- `purchasing/shopping.ts`: maps a recipe term to its German shopping term via the ingredient normalizer, then queries the provider.
+- Routes `/api/households/{id}/purchasing/{providers,search,cart}`: cart is a preview only; no checkout or ordering is exposed.
 
 5. Persistence
 - Prisma schema in `apps/web/prisma/schema.prisma`.

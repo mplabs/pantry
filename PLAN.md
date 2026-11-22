@@ -26,6 +26,6 @@
 ## Next
 
 1. Add low-stock thresholds and recurring-needs model.
-2. Add purchasing orchestration endpoints using `PurchasingProvider` abstractions.
+2. Purchasing orchestration: mock provider + search/cart-preview endpoints done; real REWE/Ökomarktgemeinschaft adapters and checkout remain.
 3. Add invite management UI (revoke, list history, expiration controls).
 4. Swift client: passkey `AuthSession`, Xcode app project (signing, ATS, associated domain), sign-in UI.

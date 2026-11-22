@@ -230,6 +230,55 @@ components:
             addedByUser:
               $ref: '#/components/schemas/UserRef'
           required: [status, addedByUser]
+    ProductOffer:
+      type: object
+      properties:
+        provider:
+          type: string
+        offerId:
+          type: string
+        title:
+          type: string
+        priceCents:
+          type: integer
+        currency:
+          type: string
+        packageLabel:
+          type: string
+      required: [provider, offerId, title, priceCents, currency]
+    ShoppingMatch:
+      type: object
+      properties:
+        term:
+          type: string
+        canonical:
+          type: string
+        shoppingTerm:
+          type: string
+          description: German shopping term derived via the ingredient normalizer.
+        offers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductOffer'
+      required: [term, canonical, shoppingTerm, offers]
+    CartLine:
+      type: object
+      properties:
+        term:
+          type: string
+        canonical:
+          type: string
+        shoppingTerm:
+          type: string
+        quantity:
+          type: integer
+        offer:
+          oneOf:
+            - $ref: '#/components/schemas/ProductOffer'
+            - type: 'null'
+        lineTotalCents:
+          type: integer
+      required: [term, canonical, shoppingTerm, quantity, offer, lineTotalCents]
   responses:
     Unauthorized:
       description: Not signed in
@@ -687,3 +736,139 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/households/{householdId}/purchasing/providers:
+    get:
+      summary: List purchasing providers and which one is active (PURCHASING_PROVIDER, default mock)
+      parameters:
+        - in: path
+          name: householdId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registered providers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        active:
+                          type: boolean
+                        healthy:
+                          type: boolean
+                      required: [name, active, healthy]
+                required: [providers]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/households/{householdId}/purchasing/search:
+    post:
+      summary: Search the active provider for offers; EN/other terms are mapped to German shopping terms
+      parameters:
+        - in: path
+          name: householdId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                term:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+              required: [term]
+      responses:
+        '200':
+          description: Offers for the term
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ShoppingMatch'
+                  - type: object
+                    properties:
+                      provider:
+                        type: string
+                    required: [provider]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+  /api/households/{householdId}/purchasing/cart:
+    post:
+      summary: Build a cart preview (cheapest offer per line). Does not place an order or move money.
+      parameters:
+        - in: path
+          name: householdId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items:
+                    type: object
+                    properties:
+                      term:
+                        type: string
+                        minLength: 1
+                        maxLength: 120
+                      quantity:
+                        type: integer
+                        minimum: 1
+                        maximum: 99
+                    required: [term, quantity]
+              required: [items]
+      responses:
+        '200':
+          description: Cart preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  provider:
+                    type: string
+                  currency:
+                    type: string
+                  lines:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CartLine'
+                  totalCents:
+                    type: integer
+                  unmatched:
+                    type: array
+                    items:
+                      type: string
+                required: [provider, currency, lines, totalCents, unmatched]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '400':
+          $ref: '#/components/responses/ValidationError'

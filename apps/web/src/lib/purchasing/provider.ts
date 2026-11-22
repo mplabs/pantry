@@ -17,9 +17,20 @@ export type PurchaseOrderResult = {
   status: "submitted" | "queued";
 };
 
+export type ProductOffer = {
+  provider: string;
+  offerId: string;
+  title: string;
+  priceCents: number;
+  currency: string;
+  packageLabel?: string;
+};
+
 export interface PurchasingProvider {
   providerName: string;
   isHealthy(): Promise<boolean>;
+  /** Offers for a shopping term already in the provider's language (e.g. German). */
+  searchOffers(term: string): Promise<ProductOffer[]>;
   submitOrder(draft: PurchaseOrderDraft): Promise<PurchaseOrderResult>;
 }
 
@@ -28,6 +39,10 @@ export class StubPurchasingProvider implements PurchasingProvider {
 
   async isHealthy(): Promise<boolean> {
     return true;
+  }
+
+  async searchOffers(): Promise<ProductOffer[]> {
+    return [];
   }
 
   async submitOrder(draft: PurchaseOrderDraft): Promise<PurchaseOrderResult> {
